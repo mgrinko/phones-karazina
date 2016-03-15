@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Phones</title>
+  <link rel="stylesheet" href="css/main.css">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.6.1/lodash.min.js" defer></script>
+  <script src="js/search.js" defer></script>
+  <script src="js/phoneCatalogue.js" defer></script>
+  <script src="js/page.js" defer></script>
+  <script src="js/app.js" defer></script>
+</head>
+<body>
+<div data-component="page">
+  <div class="side-panel">
+    <div data-component="search"></div>
+    <div data-component="phoneCatalogue"></div>
+  </div>
+
+  <div class="main-content"></div>
+</div>
+
+<script type="text/sdkfhskjdfh" id="phone-catalogue-template">
+  <span><%- title %></span>
+  <ul>
+    <% phones.forEach(function(phone) { %>
+      <li class="menu-item" data-selector="menu-item" data-id="<%- phone.id %>">
+        <a href="#<%- phone.id %>"><b><%- phone.name %></b></a>
+      </li>
+    <% }); %>
+  </ul>
+</script>
+
+
+
+</body>
+</html>
