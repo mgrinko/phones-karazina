@@ -1,19 +1,15 @@
 "use strict";
 
-class PhoneCatalogue {
+class PhoneCatalogue extends Component {
   constructor(options) {
-    this._el = options.element;
-    this._phones = options.phones;
+    super(options);
 
+    this._phones = options.phones;
     this._template = document.getElementById('phone-catalogue-template').innerHTML;
 
     this._el.addEventListener('click', this._onPhoneClick.bind(this));
 
     this._render();
-  }
-
-  getElement() {
-    return this._el;
   }
 
   _onPhoneClick(event) {
