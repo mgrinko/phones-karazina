@@ -7,19 +7,33 @@ class PhoneCatalogue {
 
     this._template = document.getElementById('phone-catalogue-template').innerHTML;
 
-    this._el.addEventListener('click', this._onPhoneClick);
+    this._el.addEventListener('click', this._onPhoneClick.bind(this));
 
     this._render();
   }
 
-  _onPhoneClick(event) {
-    var currentItem = event.target.closest('[data-selector="menu-item"]');
+  getElement() {
+    return this._el;
+  }
 
-    if (!currentItem) {
+  _onPhoneClick(event) {
+    var link = event.target.closest('[data-selector="openTrigger"]');
+
+    if (!link) {
       return;
     }
 
-    alert(currentItem.dataset.id);
+    var phoneId = link.closest('[data-selector="phoneItemContainer"]').dataset.phoneId;
+
+    this._triggerPhoneSelected(phoneId);
+  }
+
+  _triggerPhoneSelected(phoneId) {
+    let event = new CustomEvent('phoneSelected', {
+      detail: phoneId
+    });
+
+    this._el.dispatchEvent(event);
   }
 
   _render() {
