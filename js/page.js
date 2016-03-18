@@ -19,8 +19,8 @@ class Page {
       phones: this._phones
     });
 
-    this._phoneCatalogue.getElement().addEventListener('phoneSelected', this._onPhoneSelected.bind(this));
-    this._phoneViewer.getElement().addEventListener('back', this._onPhoneViewerBack.bind(this));
+    this._phoneCatalogue.on('phoneSelected', this._onPhoneSelected.bind(this));
+    this._phoneViewer.on('back', this._onPhoneViewerBack.bind(this));
   }
 
   _onPhoneSelected(event) {

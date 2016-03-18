@@ -24,12 +24,6 @@ class PhoneViewer extends Component {
       return;
     }
 
-    this._triggerBack();
-  }
-
-  _triggerBack() {
-    let event = new CustomEvent('back');
-
-    this._el.dispatchEvent(event);
+    this._trigger('back');
   }
 }
