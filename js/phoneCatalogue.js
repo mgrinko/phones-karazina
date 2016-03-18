@@ -9,7 +9,14 @@ class PhoneCatalogue extends Component {
 
     this._el.addEventListener('click', this._onPhoneClick.bind(this));
 
-    this._render();
+    this.render(this._phones);
+  }
+
+  render(phones) {
+    this._el.innerHTML = _.template(this._template)({
+      title: 'PHones to sell',
+      phones: phones
+    });
   }
 
   _onPhoneClick(event) {
@@ -24,10 +31,4 @@ class PhoneCatalogue extends Component {
     this._trigger('phoneSelected', phoneId);
   }
 
-  _render() {
-    this._el.innerHTML = _.template(this._template)({
-      title: 'PHones to sell',
-      phones: this._phones
-    });
-  }
 }

@@ -6,7 +6,7 @@ class Page {
     this._el = options.element;
     this._phones = this._getPhones();
 
-    this._search = new Search({
+    this._filter = new Filter({
       element: this._el.querySelector('[data-component="filter"]')
     });
 
@@ -21,6 +21,7 @@ class Page {
 
     this._phoneCatalogue.on('phoneSelected', this._onPhoneSelected.bind(this));
     this._phoneViewer.on('back', this._onPhoneViewerBack.bind(this));
+    this._filter.on('filterChange', this._onFilterChange.bind(this));
   }
 
   _onPhoneSelected(event) {
@@ -36,8 +37,19 @@ class Page {
     this._phoneCatalogue.show();
   }
 
-  _getPhones() {
-    return phones.slice();
+  _onFilterChange(event) {
+    let query = event.detail;
+    let filteredPhones = this._getPhones(query);
+
+    this._phoneCatalogue.render(filteredPhones);
+  }
+
+  _getPhones(query = '') {
+    let normalizedQuery = query.toLowerCase().trim();
+
+    return phones.filter(function(phone) {
+      return phone.name.toLowerCase().indexOf(normalizedQuery) > -1;
+    });
   }
 
   _getPhoneDetails(phoneId) {
