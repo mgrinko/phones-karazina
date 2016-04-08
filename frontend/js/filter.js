@@ -1,5 +1,7 @@
 "use strict";
 
+let Component = require('./component.js');
+
 class Filter extends Component {
   constructor(options) {
     super(options);
@@ -13,3 +15,5 @@ class Filter extends Component {
     this._trigger('filterChange', this._field.value);
   }
 }
+
+module.exports = Filter;
