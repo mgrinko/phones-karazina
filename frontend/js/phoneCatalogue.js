@@ -7,11 +7,7 @@ class PhoneCatalogue extends Component {
   constructor(options) {
     super(options);
 
-    this._phones = options.phones;
-
     this._el.addEventListener('click', this._onPhoneClick.bind(this));
-
-    this.render(this._phones);
   }
 
   render(phones) {
