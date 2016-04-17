@@ -1,5 +1,6 @@
 "use strict";
 
+let AjaxService = require('./ajaxService.js');
 let Filter = require('./filter.js');
 let PhoneViewer = require('./phoneViewer.js');
 let PhoneCatalogue = require('./phoneCatalogue.js');
@@ -28,7 +29,44 @@ class Page {
 
   _onPhoneSelected(event) {
     let phoneId = event.detail;
-    let phoneDetails = this._showPhoneDetails(phoneId);
+    let ajaxPromise = AjaxService.ajax(`/data/phones/${phoneId}.json`);
+    let mouseOutPromise = this._getMouseOutPromise();
+
+    mouseOutPromise
+      .then(function() {
+        return ajaxPromise;
+      })
+      .then(function(details) {
+        this._showPhoneDetails(details);
+      }.bind(this), function(error) {
+        console.error(error);
+      })
+      .catch(function(error) {
+        console.error(error);
+      })
+
+
+    Promise.all([mouseOutPromise, ajaxPromise])
+      .then(function(results) {
+        this._showPhoneDetails(results[1]);
+      }, function(error) {
+        console.error(error);
+      });
+
+
+  }
+
+  _getMouseOutPromise() {
+    var promise  = new Promise(function(resolve, reject) {
+      this._phoneCatalogue.on('mouseLeft', () => {
+        resolve();
+      });
+    }.bind(this));
+  }
+
+  _showPhoneDetails(details) {
+    this._phoneViewer.show(details);
+    this._phoneCatalogue.hide();
   }
 
   _onPhoneViewerBack() {
@@ -46,47 +84,15 @@ class Page {
   _loadPhones(query = '') {
     let normalizedQuery = query.toLowerCase().trim();
 
-    var xhr = new XMLHttpRequest();
-
-    xhr.open('GET', '/data/phones.json', true);
-
-    xhr.send();
-
-    xhr.onload = () => {
-      if (xhr.status != 200) {
-        alert( xhr.status + ': ' + xhr.statusText ); // пример вывода: 404: Not Found
-      } else {
-        var phones = JSON.parse(xhr.responseText);
-
+    AjaxService.ajax('/data/phones.json', {
+      success: function(phones) {
         this._phoneCatalogue.render(phones);
+      }.bind(this),
+
+      error: function(error) {
+        console.log(error);
       }
-    };
-
-
-
-    //return phones.filter(function(phone) {
-    //  return phone.name.toLowerCase().indexOf(normalizedQuery) > -1;
-    //});
-  }
-
-  _showPhoneDetails(phoneId) {
-    var xhr = new XMLHttpRequest();
-
-    xhr.open('GET', `/data/phones/${phoneId}.json`, true);
-
-    xhr.send();
-
-    xhr.onload = () => {
-      if (xhr.status != 200) {
-        alert( xhr.status + ': ' + xhr.statusText ); // пример вывода: 404: Not Found
-      } else {
-        var phoneDetails = JSON.parse(xhr.responseText);
-
-        this._phoneViewer.show(phoneDetails);
-        this._phoneCatalogue.hide();
-      }
-    };
-
+    });
   }
 }
 

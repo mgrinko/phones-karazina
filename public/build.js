@@ -59,9 +59,10 @@
 
 	"use strict";
 	
-	let Filter = __webpack_require__(2);
-	let PhoneViewer = __webpack_require__(4);
-	let PhoneCatalogue = __webpack_require__(25);
+	let AjaxService = __webpack_require__(2);
+	let Filter = __webpack_require__(3);
+	let PhoneViewer = __webpack_require__(5);
+	let PhoneCatalogue = __webpack_require__(26);
 	
 	class Page {
 	  constructor(options) {
@@ -87,7 +88,44 @@
 	
 	  _onPhoneSelected(event) {
 	    let phoneId = event.detail;
-	    let phoneDetails = this._showPhoneDetails(phoneId);
+	    let ajaxPromise = AjaxService.ajax(`/data/phones/${phoneId}.json`);
+	    let mouseOutPromise = this._getMouseOutPromise();
+	
+	    mouseOutPromise
+	      .then(function() {
+	        return ajaxPromise;
+	      })
+	      .then(function(details) {
+	        this._showPhoneDetails(details);
+	      }.bind(this), function(error) {
+	        console.error(error);
+	      })
+	      .catch(function(error) {
+	        console.error(error);
+	      })
+	
+	
+	    Promise.all([mouseOutPromise, ajaxPromise])
+	      .then(function(results) {
+	        this._showPhoneDetails(results[1]);
+	      }, function(error) {
+	        console.error(error);
+	      });
+	
+	
+	  }
+	
+	  _getMouseOutPromise() {
+	    var promise  = new Promise(function(resolve, reject) {
+	      this._phoneCatalogue.on('mouseLeft', () => {
+	        resolve();
+	      });
+	    }.bind(this));
+	  }
+	
+	  _showPhoneDetails(details) {
+	    this._phoneViewer.show(details);
+	    this._phoneCatalogue.hide();
 	  }
 	
 	  _onPhoneViewerBack() {
@@ -105,47 +143,15 @@
 	  _loadPhones(query = '') {
 	    let normalizedQuery = query.toLowerCase().trim();
 	
-	    var xhr = new XMLHttpRequest();
-	
-	    xhr.open('GET', '/data/phones.json', true);
-	
-	    xhr.send();
-	
-	    xhr.onload = () => {
-	      if (xhr.status != 200) {
-	        alert( xhr.status + ': ' + xhr.statusText ); // пример вывода: 404: Not Found
-	      } else {
-	        var phones = JSON.parse(xhr.responseText);
-	
+	    AjaxService.ajax('/data/phones.json', {
+	      success: function(phones) {
 	        this._phoneCatalogue.render(phones);
+	      }.bind(this),
+	
+	      error: function(error) {
+	        console.log(error);
 	      }
-	    };
-	
-	
-	
-	    //return phones.filter(function(phone) {
-	    //  return phone.name.toLowerCase().indexOf(normalizedQuery) > -1;
-	    //});
-	  }
-	
-	  _showPhoneDetails(phoneId) {
-	    var xhr = new XMLHttpRequest();
-	
-	    xhr.open('GET', `/data/phones/${phoneId}.json`, true);
-	
-	    xhr.send();
-	
-	    xhr.onload = () => {
-	      if (xhr.status != 200) {
-	        alert( xhr.status + ': ' + xhr.statusText ); // пример вывода: 404: Not Found
-	      } else {
-	        var phoneDetails = JSON.parse(xhr.responseText);
-	
-	        this._phoneViewer.show(phoneDetails);
-	        this._phoneCatalogue.hide();
-	      }
-	    };
-	
+	    });
 	  }
 	}
 	
@@ -159,11 +165,46 @@
 
 /***/ },
 /* 2 */
+/***/ function(module, exports) {
+
+	module.exports = class AjaxService {
+	  static ajax(url, options) {
+	    return new Promise(function(resolve, reject) {
+	
+	      var xhr = new XMLHttpRequest();
+	      var method = options.method || 'GET';
+	
+	      xhr.open(method, url, true);
+	
+	      xhr.onload = () => {
+	        if (xhr.status != 200) {
+	          handleError();
+	        } else {
+	          resolve(JSON.parse(xhr.responseText));
+	        }
+	      };
+	
+	      xhr.onerror = handleError;
+	
+	      xhr.send();
+	
+	      function handleError() {
+	        reject(new Error(xhr.status + ': ' + xhr.statusText));
+	      }
+	    });
+	
+	  }
+	
+	
+	};
+
+/***/ },
+/* 3 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
-	let Component = __webpack_require__(3);
+	let Component = __webpack_require__(4);
 	
 	class Filter extends Component {
 	  constructor(options) {
@@ -183,7 +224,7 @@
 
 
 /***/ },
-/* 3 */
+/* 4 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -225,13 +266,13 @@
 	module.exports = Component;
 
 /***/ },
-/* 4 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
-	let Component = __webpack_require__(3);
-	let templateFunction = __webpack_require__(5);
+	let Component = __webpack_require__(4);
+	let templateFunction = __webpack_require__(6);
 	
 	class PhoneViewer extends Component {
 	  constructor(options) {
@@ -263,36 +304,36 @@
 
 
 /***/ },
-/* 5 */
+/* 6 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Handlebars = __webpack_require__(6);
+	var Handlebars = __webpack_require__(7);
 	function __default(obj) { return obj && (obj.__esModule ? obj["default"] : obj); }
 	module.exports = (Handlebars["default"] || Handlebars).template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
 	    var stack1, alias1=container.lambda, alias2=container.escapeExpression;
 	
 	  return "<button data-selector=\"backButton\">Back</button>\n\n<div class=\"phone-images\">\n  <img class=\"phone active\" src=\""
-	    + alias2(alias1(((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.imageUrl : stack1), depth0))
+	    + alias2(alias1(((stack1 = ((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.images : stack1)) != null ? stack1["0"] : stack1), depth0))
 	    + "\">\n</div>\n\n<h1>"
 	    + alias2(alias1(((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.name : stack1), depth0))
 	    + "</h1>\n<h2>"
 	    + alias2(alias1(((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.id : stack1), depth0))
 	    + "</h2>\n\n<p>"
-	    + alias2(alias1(((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.snippet : stack1), depth0))
+	    + alias2(alias1(((stack1 = (depth0 != null ? depth0.phone : depth0)) != null ? stack1.description : stack1), depth0))
 	    + "</p>";
 	},"useData":true});
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	// Create a simple path alias to allow browserify to resolve
 	// the runtime on a supported path.
-	module.exports = __webpack_require__(7)['default'];
+	module.exports = __webpack_require__(8)['default'];
 
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -306,30 +347,30 @@
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 	
-	var _handlebarsBase = __webpack_require__(8);
+	var _handlebarsBase = __webpack_require__(9);
 	
 	var base = _interopRequireWildcard(_handlebarsBase);
 	
 	// Each of these augment the Handlebars object. No need to setup here.
 	// (This is done to easily share code between commonjs and browse envs)
 	
-	var _handlebarsSafeString = __webpack_require__(22);
+	var _handlebarsSafeString = __webpack_require__(23);
 	
 	var _handlebarsSafeString2 = _interopRequireDefault(_handlebarsSafeString);
 	
-	var _handlebarsException = __webpack_require__(10);
+	var _handlebarsException = __webpack_require__(11);
 	
 	var _handlebarsException2 = _interopRequireDefault(_handlebarsException);
 	
-	var _handlebarsUtils = __webpack_require__(9);
+	var _handlebarsUtils = __webpack_require__(10);
 	
 	var Utils = _interopRequireWildcard(_handlebarsUtils);
 	
-	var _handlebarsRuntime = __webpack_require__(23);
+	var _handlebarsRuntime = __webpack_require__(24);
 	
 	var runtime = _interopRequireWildcard(_handlebarsRuntime);
 	
-	var _handlebarsNoConflict = __webpack_require__(24);
+	var _handlebarsNoConflict = __webpack_require__(25);
 	
 	var _handlebarsNoConflict2 = _interopRequireDefault(_handlebarsNoConflict);
 	
@@ -364,7 +405,7 @@
 
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -375,17 +416,17 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
-	var _exception = __webpack_require__(10);
+	var _exception = __webpack_require__(11);
 	
 	var _exception2 = _interopRequireDefault(_exception);
 	
-	var _helpers = __webpack_require__(11);
+	var _helpers = __webpack_require__(12);
 	
-	var _decorators = __webpack_require__(19);
+	var _decorators = __webpack_require__(20);
 	
-	var _logger = __webpack_require__(21);
+	var _logger = __webpack_require__(22);
 	
 	var _logger2 = _interopRequireDefault(_logger);
 	
@@ -474,7 +515,7 @@
 
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -604,7 +645,7 @@
 
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -650,7 +691,7 @@
 
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -661,31 +702,31 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _helpersBlockHelperMissing = __webpack_require__(12);
+	var _helpersBlockHelperMissing = __webpack_require__(13);
 	
 	var _helpersBlockHelperMissing2 = _interopRequireDefault(_helpersBlockHelperMissing);
 	
-	var _helpersEach = __webpack_require__(13);
+	var _helpersEach = __webpack_require__(14);
 	
 	var _helpersEach2 = _interopRequireDefault(_helpersEach);
 	
-	var _helpersHelperMissing = __webpack_require__(14);
+	var _helpersHelperMissing = __webpack_require__(15);
 	
 	var _helpersHelperMissing2 = _interopRequireDefault(_helpersHelperMissing);
 	
-	var _helpersIf = __webpack_require__(15);
+	var _helpersIf = __webpack_require__(16);
 	
 	var _helpersIf2 = _interopRequireDefault(_helpersIf);
 	
-	var _helpersLog = __webpack_require__(16);
+	var _helpersLog = __webpack_require__(17);
 	
 	var _helpersLog2 = _interopRequireDefault(_helpersLog);
 	
-	var _helpersLookup = __webpack_require__(17);
+	var _helpersLookup = __webpack_require__(18);
 	
 	var _helpersLookup2 = _interopRequireDefault(_helpersLookup);
 	
-	var _helpersWith = __webpack_require__(18);
+	var _helpersWith = __webpack_require__(19);
 	
 	var _helpersWith2 = _interopRequireDefault(_helpersWith);
 	
@@ -702,14 +743,14 @@
 
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	exports['default'] = function (instance) {
 	  instance.registerHelper('blockHelperMissing', function (context, options) {
@@ -747,7 +788,7 @@
 
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -757,9 +798,9 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
-	var _exception = __webpack_require__(10);
+	var _exception = __webpack_require__(11);
 	
 	var _exception2 = _interopRequireDefault(_exception);
 	
@@ -847,7 +888,7 @@
 
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -857,7 +898,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _exception = __webpack_require__(10);
+	var _exception = __webpack_require__(11);
 	
 	var _exception2 = _interopRequireDefault(_exception);
 	
@@ -878,14 +919,14 @@
 
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	exports['default'] = function (instance) {
 	  instance.registerHelper('if', function (conditional, options) {
@@ -913,7 +954,7 @@
 
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -945,7 +986,7 @@
 
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -963,14 +1004,14 @@
 
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	exports['default'] = function (instance) {
 	  instance.registerHelper('with', function (context, options) {
@@ -1002,7 +1043,7 @@
 
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1013,7 +1054,7 @@
 	
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 	
-	var _decoratorsInline = __webpack_require__(20);
+	var _decoratorsInline = __webpack_require__(21);
 	
 	var _decoratorsInline2 = _interopRequireDefault(_decoratorsInline);
 	
@@ -1024,14 +1065,14 @@
 
 
 /***/ },
-/* 20 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	exports['default'] = function (instance) {
 	  instance.registerDecorator('inline', function (fn, props, container, options) {
@@ -1059,14 +1100,14 @@
 
 
 /***/ },
-/* 21 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 	
 	exports.__esModule = true;
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	var logger = {
 	  methodMap: ['debug', 'info', 'warn', 'error'],
@@ -1112,7 +1153,7 @@
 
 
 /***/ },
-/* 22 */
+/* 23 */
 /***/ function(module, exports) {
 
 	// Build out our basic SafeString type
@@ -1133,7 +1174,7 @@
 
 
 /***/ },
-/* 23 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1153,15 +1194,15 @@
 	
 	function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj['default'] = obj; return newObj; } }
 	
-	var _utils = __webpack_require__(9);
+	var _utils = __webpack_require__(10);
 	
 	var Utils = _interopRequireWildcard(_utils);
 	
-	var _exception = __webpack_require__(10);
+	var _exception = __webpack_require__(11);
 	
 	var _exception2 = _interopRequireDefault(_exception);
 	
-	var _base = __webpack_require__(8);
+	var _base = __webpack_require__(9);
 	
 	function checkRevision(compilerInfo) {
 	  var compilerRevision = compilerInfo && compilerInfo[0] || 1,
@@ -1431,7 +1472,7 @@
 
 
 /***/ },
-/* 24 */
+/* 25 */
 /***/ function(module, exports) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/* global window */
@@ -1458,17 +1499,19 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
-/* 25 */
+/* 26 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict";
 	
-	let Component = __webpack_require__(3);
-	let templateFunction = __webpack_require__(26);
+	let Component = __webpack_require__(4);
+	let templateFunction = __webpack_require__(27);
 	
 	class PhoneCatalogue extends Component {
 	  constructor(options) {
 	    super(options);
+	
+	    this._onMouseOut = this._onMouseOut.bind(this);
 	
 	    this._el.addEventListener('click', this._onPhoneClick.bind(this));
 	  }
@@ -1483,15 +1526,35 @@
 	  _onPhoneClick(event) {
 	    var link = event.target.closest('[data-selector="openTrigger"]');
 	
+	    this._selectedItem = event.target.closest('[data-selector="phoneItemContainer"]');
+	
 	    if (!link) {
 	      return;
 	    }
 	
 	    var phoneId = link.closest('[data-selector="phoneItemContainer"]').dataset.phoneId;
 	
+	    this._el.addEventListener('mouseout', this._onMouseOut);
+	
 	    this._trigger('phoneSelected', phoneId);
 	  }
 	
+	  _onMouseOut(event) { // 010100  010000
+	    var isMovedOut = !event.relatedTarget
+	      || !(
+	        event.relatedTarget === this._selectedItem
+	        ||
+	        this._selectedItem.compareDocumentPosition(event.relatedTarget) & 16
+	      );
+	
+	    if (!isMovedOut) {
+	      return;
+	    }
+	
+	    this._el.removeEventListener('mouseout', this._onMouseOut);
+	
+	    this._trigger('mouseLeft');
+	  }
 	}
 	
 	module.exports = PhoneCatalogue;
@@ -1500,10 +1563,10 @@
 
 
 /***/ },
-/* 26 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Handlebars = __webpack_require__(6);
+	var Handlebars = __webpack_require__(7);
 	function __default(obj) { return obj && (obj.__esModule ? obj["default"] : obj); }
 	module.exports = (Handlebars["default"] || Handlebars).template({"1":function(container,depth0,helpers,partials,data) {
 	    var alias1=container.lambda, alias2=container.escapeExpression;
